@@ -15,6 +15,8 @@ import {IPoolManager} from "@uniswap/v4-core/src/interfaces/IPoolManager.sol";
 import {PoolIdLibrary} from "@uniswap/v4-core/src/types/PoolId.sol";
 import {IPoolManager} from "@uniswap/v4-core/src/interfaces/IPoolManager.sol";
 import {PoolKey} from "@uniswap/v4-core/src/types/PoolKey.sol";
+import {LPFeeLibrary} from "@uniswap/v4-core/src/libraries/LPFeeLibrary.sol";
+import {ProtocolFeeLibrary} from "@uniswap/v4-core/src/libraries/ProtocolFeeLibrary.sol";
 
 library QuoterMath {
     using SafeCast for uint256;
@@ -23,6 +25,7 @@ library QuoterMath {
     using Slot0Library for Slot0;
     using StateLibrary for IPoolManager;
     using PoolIdLibrary for PoolKey;
+    using ProtocolFeeLibrary for *;
 
     struct Slot0Struct {
         // the current price
@@ -31,6 +34,10 @@ library QuoterMath {
         int24 tick;
         // tick spacing
         int24 tickSpacing;
+        // fee of pool (cannot use poolkey)
+        uint24 lpFee;
+        // protocl fee
+        uint24 protocolFee;
     }
 
     // used for packing under the stack limit
@@ -46,7 +53,7 @@ library QuoterMath {
         view
         returns (Slot0Struct memory slot0)
     {
-        (slot0.sqrtPriceX96, slot0.tick,,) = poolManager.getSlot0(poolKey.toId());
+        (slot0.sqrtPriceX96, slot0.tick, slot0.protocolFee, slot0.lpFee) = poolManager.getSlot0(poolKey.toId());
         slot0.tickSpacing = poolKey.tickSpacing;
         return slot0;
     }
@@ -115,22 +122,27 @@ library QuoterMath {
         view
         returns (int256 amount0, int256 amount1, uint160 sqrtPriceAfterX96, uint32 initializedTicksCrossed)
     {
+        Slot0Struct memory slot0 = fillSlot0(poolManager, poolKey);
+        
         QuoteParams memory quoteParams = QuoteParams(
-            swapParams.zeroForOne, swapParams.amountSpecified < 0, poolKey.fee, swapParams.sqrtPriceLimitX96
+            swapParams.zeroForOne, swapParams.amountSpecified < 0, slot0.lpFee, swapParams.sqrtPriceLimitX96
         );
         initializedTicksCrossed = 1;
-
-        Slot0Struct memory slot0 = fillSlot0(poolManager, poolKey);
 
         SwapState memory state = SwapState({
             amountSpecifiedRemaining: -swapParams.amountSpecified,
             amountCalculated: 0,
             sqrtPriceX96: slot0.sqrtPriceX96,
             tick: slot0.tick,
-            feeGrowthGlobalX128: 0,
-            protocolFee: 0,
+            feeGrowthGlobalX128: 0, // meaingless for quote
+            protocolFee: slot0.protocolFee,
             liquidity: poolManager.getLiquidity(poolKey.toId())
         });
+
+        uint256 protocolFee =
+            swapParams.zeroForOne ? slot0.protocolFee.getZeroForOneFee() : slot0.protocolFee.getOneForZeroFee();
+
+        uint24 swapFee = protocolFee == 0 ? slot0.lpFee : uint16(protocolFee).calculateSwapFee(slot0.lpFee);
 
         while (state.amountSpecifiedRemaining != 0 && state.sqrtPriceX96 != quoteParams.sqrtPriceLimitX96) {
             StepComputations memory step;
@@ -161,7 +173,7 @@ library QuoterMath {
                 ) ? quoteParams.sqrtPriceLimitX96 : step.sqrtPriceNextX96,
                 state.liquidity,
                 -state.amountSpecifiedRemaining,
-                quoteParams.fee
+                swapFee
             );
 
             if (quoteParams.exactInput) {
