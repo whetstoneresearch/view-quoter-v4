@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-pragma solidity 0.8.26;
+pragma solidity ^0.8.26;
 
 import {IQuoter} from "../interfaces/IQuoter.sol";
 import {SwapMath} from "@uniswap/v4-core/src/libraries/SwapMath.sol";
@@ -48,7 +48,7 @@ library QuoterMath {
         uint160 sqrtPriceLimitX96;
     }
 
-    function fillSlot0(IPoolManager poolManager, PoolKey calldata poolKey)
+    function fillSlot0(IPoolManager poolManager, PoolKey memory poolKey)
         private
         view
         returns (Slot0Struct memory slot0)
@@ -117,7 +117,7 @@ library QuoterMath {
     /// @return amount1 the amount of token1 sent in or out of the pool
     /// @return sqrtPriceAfterX96 the price of the pool after the swap
     /// @return initializedTicksCrossed the number of initialized ticks LOADED IN
-    function quote(IPoolManager poolManager, PoolKey calldata poolKey, SwapParams calldata swapParams)
+    function quote(IPoolManager poolManager, PoolKey memory poolKey, SwapParams memory swapParams)
         internal
         view
         returns (int256 amount0, int256 amount1, uint160 sqrtPriceAfterX96, uint32 initializedTicksCrossed)

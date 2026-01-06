@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.26;
+pragma solidity ^0.8.26;
 
 import {Vm} from "forge-std/Vm.sol";
 import {Test} from "forge-std/Test.sol";
 import {Quoter} from "../src/Quoter.sol";
 import {IPoolManager} from "@uniswap/v4-core/src/interfaces/IPoolManager.sol";
 import {ModifyLiquidityParams, SwapParams} from "@uniswap/v4-core/src/types/PoolOperation.sol";
-import {Deployers} from "@uniswap/v4-core/test/utils/Deployers.sol";
+import {Deployers} from "./utils/Deployers.sol";
 import {TestERC20} from "@uniswap/v4-core/src/test/TestERC20.sol";
 import {HookEnabledSwapRouter} from "./utils/HookEnabledSwapRouter.sol";
 import {Currency} from "@uniswap/v4-core/src/types/Currency.sol";
@@ -43,7 +43,7 @@ contract QuoterTest is Test, Deployers {
         token1.approve(address(router), type(uint256).max);
 
         (key, id) = initPoolAndAddLiquidity(
-            currency0, currency1, IHooks(address(0)), TICK_SPACING * 50, SQRT_PRICE_1_1
+            currency0, currency1, IHooks(address(0)), TICK_SPACING * 50, SQRT_PRICE_1_1, ZERO_BYTES
         );
 
         quoter = new Quoter(manager);
