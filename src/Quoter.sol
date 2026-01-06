@@ -4,6 +4,7 @@ pragma solidity 0.8.26;
 import {IQuoter} from "./interfaces/IQuoter.sol";
 import {PoolKey} from "@uniswap/v4-core/src/types/PoolKey.sol";
 import {IPoolManager} from "@uniswap/v4-core/src/interfaces/IPoolManager.sol";
+import {SwapParams} from "@uniswap/v4-core/src/types/PoolOperation.sol";
 import {QuoterMath} from "./libraries/QuoterMath.sol";
 
 contract Quoter is IQuoter {
@@ -13,7 +14,7 @@ contract Quoter is IQuoter {
         poolManager = _poolManager;
     }
 
-    function quoteSingle(PoolKey calldata poolKey, IPoolManager.SwapParams calldata swapParams)
+    function quoteSingle(PoolKey calldata poolKey, SwapParams calldata swapParams)
         public
         view
         override

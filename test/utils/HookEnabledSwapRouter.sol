@@ -4,6 +4,7 @@ pragma solidity ^0.8.20;
 import {CurrencyLibrary, Currency} from "@uniswap/v4-core/src/types/Currency.sol";
 import {IERC20Minimal} from "@uniswap/v4-core/src/interfaces/external/IERC20Minimal.sol";
 import {IPoolManager} from "@uniswap/v4-core/src/interfaces/IPoolManager.sol";
+import {SwapParams} from "@uniswap/v4-core/src/types/PoolOperation.sol";
 import {BalanceDelta} from "@uniswap/v4-core/src/types/BalanceDelta.sol";
 import {PoolKey} from "@uniswap/v4-core/src/types/PoolKey.sol";
 import {PoolTestBase} from "@uniswap/v4-core/src/test/PoolTestBase.sol";
@@ -22,7 +23,7 @@ contract HookEnabledSwapRouter is PoolTestBase {
         address sender;
         TestSettings testSettings;
         PoolKey key;
-        IPoolManager.SwapParams params;
+        SwapParams params;
         bytes hookData;
     }
 
@@ -33,7 +34,7 @@ contract HookEnabledSwapRouter is PoolTestBase {
 
     function swap(
         PoolKey memory key,
-        IPoolManager.SwapParams memory params,
+        SwapParams memory params,
         TestSettings memory testSettings,
         bytes memory hookData
     ) external payable returns (BalanceDelta delta) {
@@ -42,7 +43,7 @@ contract HookEnabledSwapRouter is PoolTestBase {
         );
 
         uint256 ethBalance = address(this).balance;
-        if (ethBalance > 0) CurrencyLibrary.NATIVE.transfer(msg.sender, ethBalance);
+        if (ethBalance > 0) CurrencyLibrary.ADDRESS_ZERO.transfer(msg.sender, ethBalance);
     }
 
     function unlockCallback(bytes calldata rawData) external returns (bytes memory) {
