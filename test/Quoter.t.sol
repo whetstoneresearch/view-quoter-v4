@@ -5,6 +5,7 @@ import {Vm} from "forge-std/Vm.sol";
 import {Test} from "forge-std/Test.sol";
 import {Quoter} from "../src/Quoter.sol";
 import {IPoolManager} from "@uniswap/v4-core/src/interfaces/IPoolManager.sol";
+import {ModifyLiquidityParams, SwapParams} from "@uniswap/v4-core/src/types/PoolOperation.sol";
 import {Deployers} from "@uniswap/v4-core/test/utils/Deployers.sol";
 import {TestERC20} from "@uniswap/v4-core/src/test/TestERC20.sol";
 import {HookEnabledSwapRouter} from "./utils/HookEnabledSwapRouter.sol";
@@ -42,7 +43,7 @@ contract QuoterTest is Test, Deployers {
         token1.approve(address(router), type(uint256).max);
 
         (key, id) = initPoolAndAddLiquidity(
-            currency0, currency1, IHooks(address(0)), TICK_SPACING * 50, SQRT_PRICE_1_1, ZERO_BYTES
+            currency0, currency1, IHooks(address(0)), TICK_SPACING * 50, SQRT_PRICE_1_1
         );
 
         quoter = new Quoter(manager);
@@ -74,7 +75,7 @@ contract QuoterTest is Test, Deployers {
         assertEq(initializedTicksCrossed, 3);
         // the pool has no more liquidity for this quote
         (int256 amount0, int256 amount1, uint160 sqrtPriceAfterX96, uint32 initializedTicksCrossed2) =
-            quoter.quoteSingle(key, IPoolManager.SwapParams(false, -1 ether, MAX_PRICE_LIMIT));
+            quoter.quoteSingle(key, SwapParams(false, -1 ether, MAX_PRICE_LIMIT));
         assertEq(amount0, 0);
         assertEq(amount1, 0);
         assertEq(sqrtPriceAfterX96, 0); // undefined behavior
@@ -83,8 +84,8 @@ contract QuoterTest is Test, Deployers {
 
     // add more liquidity and swap into it
     function testAddLiquidityAndSwap() public {
-        IPoolManager.ModifyLiquidityParams memory params =
-            IPoolManager.ModifyLiquidityParams({tickLower: 100, tickUpper: 200, liquidityDelta: 2e18, salt: 0});
+        ModifyLiquidityParams memory params =
+            ModifyLiquidityParams({tickLower: 100, tickUpper: 200, liquidityDelta: 2e18, salt: 0});
         modifyLiquidityRouter.modifyLiquidity(key, params, ZERO_BYTES);
         (,,, uint32 initializedTicksCrossed) = _quote(false, -1 ether);
         assertEq(initializedTicksCrossed, 4);
@@ -105,7 +106,7 @@ contract QuoterTest is Test, Deployers {
 
         tickLower = _align(tickLower);
         tickUpper = _align(tickUpper);
-        IPoolManager.ModifyLiquidityParams memory params = IPoolManager.ModifyLiquidityParams({
+        ModifyLiquidityParams memory params = ModifyLiquidityParams({
             tickLower: tickLower,
             tickUpper: tickUpper,
             liquidityDelta: int128(uint128(liquidityDelta)),
@@ -147,7 +148,7 @@ contract QuoterTest is Test, Deployers {
     {
         uint160 sqrtPriceLimitX96 = zeroForOne ? MIN_PRICE_LIMIT : MAX_PRICE_LIMIT;
         (amount0, amount1, sqrtPriceAfterX96, initializedTicksCrossed) =
-            quoter.quoteSingle(key, IPoolManager.SwapParams(zeroForOne, amountSpecified, sqrtPriceLimitX96));
+            quoter.quoteSingle(key, SwapParams(zeroForOne, amountSpecified, sqrtPriceLimitX96));
         if (amount0 == 0 && amount1 == 0) {
             // pool has no liquidity for this quote
             vm.expectRevert(); // PriceLimitAlreadyExceeded
