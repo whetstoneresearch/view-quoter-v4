@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-pragma solidity 0.8.26;
+pragma solidity ^0.8.26;
 
 import {PoolKey} from "@uniswap/v4-core/src/types/PoolKey.sol";
 import {IPoolManager} from "@uniswap/v4-core/src/interfaces/IPoolManager.sol";
@@ -24,7 +24,7 @@ interface IQuoter {
     /// @return amount1 the amount of token1 sent in or out of the pool
     /// @return sqrtPriceAfterX96 the price of the pool after the swap
     /// @return initializedTicksCrossed the number of initialized ticks LOADED IN
-    function quoteSingle(PoolKey calldata poolKey, SwapParams calldata swapParams)
+    function quoteSingle(PoolKey memory poolKey, SwapParams memory swapParams)
         external
         view
         returns (int256, int256, uint160, uint32);
